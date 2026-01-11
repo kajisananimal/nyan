@@ -126,6 +126,47 @@ h2{font-size:18px}
   background: linear-gradient(90deg, rgba(255,179,217,.98), rgba(199,182,255,.96), rgba(158,234,255,.94));
   box-shadow: 0 18px 44px rgba(255,179,217,.22);
 }
+
+.btn.primary:hover{
+  filter: brightness(1.03) saturate(1.05);
+  box-shadow: 0 22px 60px rgba(255,179,217,.28);
+}
+
+/* 強調CTA（結果を見る / カードを保存） */
+#btnResult, #btnSave{
+  padding: 14px 18px;
+  border-radius: 18px;
+  font-size: 1.06rem;
+  letter-spacing: .02em;
+  position: relative;
+  z-index: 50; /* クリック優先 */
+  -webkit-tap-highlight-color: transparent;
+}
+
+#btnResult{
+  min-width: 220px;
+  box-shadow: 0 22px 62px rgba(255,179,217,.26);
+  animation: ctaPulse 2.2s ease-in-out infinite;
+}
+
+#btnSave{
+  min-width: 220px;
+}
+
+@keyframes ctaPulse{
+  0%,100%{ transform: translateY(0) scale(1); filter: brightness(1); }
+  50%{ transform: translateY(-1px) scale(1.02); filter: brightness(1.04); }
+}
+
+/* 押せない時の見た目 */
+.btn:disabled,
+button.btn:disabled{
+  opacity: .55;
+  cursor: not-allowed;
+  box-shadow: none !important;
+  filter: grayscale(.15);
+  transform: none !important;
+}
 .btn:active{transform: translateY(1px)}
 button.btn{appearance:none}
 
@@ -254,8 +295,8 @@ select{
 }
 
 /* Click fix for iOS */
-.actions{position:relative; z-index:10;}
-.actions button, .actions a{position:relative; z-index:11; pointer-events:auto;}
+.actions{position:relative; z-index:60; pointer-events:auto;}
+.actions button, .actions a{position:relative; z-index:61; pointer-events:auto;}
 .card, header{transform: translateZ(0);}
 button{touch-action: manipulation;}
 

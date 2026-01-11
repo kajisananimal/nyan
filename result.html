@@ -292,26 +292,3 @@
 </script>
 </body>
 </html>
-const previewKey = params.get("type");
-  if (previewKey && TYPES[previewKey]) {
-    typeKey = previewKey;
-  }
-  function wrapText(text, maxWidth, ctx){
-    const words = text.split("");
-    const lines = [];
-    let line = "";
-    for (const ch of words){
-      const test = line + ch;
-      const w = ctx.measureText(test).width;
-      if (w > maxWidth && line){
-        lines.push(line);
-        line = ch;
-      } else {
-        line = test;
-      }
-    }
-    if (line) lines.push(line);
-    return lines;
-  }
-
-
