@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>どうぶつ12タイプ診断 | 診断結果</title>
+  <meta name="description" content="質問に答えるだけで、あなたを表す「12タイプ動物キャラ」がわかる診断。性格・仕事・恋愛の傾向に加えて、相性診断や結果カードの保存もできます。">
+  <meta name="robots" content="noarchive" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;900&family=Zen+Maru+Gothic:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" href="assets/favicon-32.png">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <meta property="og:title" content="どうぶつ12タイプ診断 | 診断結果">
+  <meta property="og:description" content="質問に答えるだけで、あなたを表す「12タイプ動物キャラ」がわかる診断。性格・仕事・恋愛の傾向に加えて、相性診断や結果カードの保存もできます。">
+  <meta property="og:image" content="assets/ogp.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="どうぶつ12タイプ診断 | 診断結果">
+  <meta name="twitter:description" content="質問に答えるだけで、あなたを表す「12タイプ動物キャラ」がわかる診断。性格・仕事・恋愛の傾向に加えて、相性診断や結果カードの保存もできます。">
+  <meta name="twitter:image" content="assets/ogp.png">
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebSite", "name": "どうぶつ12タイプ診断", "description": "質問に答えるだけで、あなたを表す「12タイプ動物キャラ」がわかる診断。性格・仕事・恋愛の傾向に加えて、相性診断や結果カードの保存もできます。", "inLanguage": "ja", "url": "./"}</script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <div class="badge">結</div>
+        <div>
+          <h1>どうぶつ12タイプ診断結果</h1>
+          <div class="subtitle">結果URLをそのまま共有できます</div>
+        </div>
+      </div>
+      <nav class="nav">
+        <a href="index.html">どうぶつ12タイプ診断</a>
+        <a href="compatibility.html">相性</a>
+      </nav>
+    </header>
+
+    <section class="card" id="resultCard">
+      <div class="result-wrap">
+        <img id="typeImg" src="" alt="タイプ画像" />
+        <div style="flex:1;">
+          <div class="result-title">
+            <div class="type-pill" id="typeLabel"></div>
+            <div class="small" id="typeCatch"></div>
+          </div>
+          <div class="actions" style="margin-top:12px;">
+            <button class="primary" id="btnCopy">結果URLをコピー</button>
+            <button class="secondary" id="btnSave">カードを保存（アルバムへ） ✨</button>
+            <a class="btn secondary" id="btnX" target="_blank" rel="noopener">Xでシェア</a>
+            <a class="btn ghost" href="index.html">もう一回どうぶつ12タイプ診断</a>
+          </div>
+          <div class="footer" id="urlLine"></div>
+        </div>
+      </div>
+
+      <hr class="sep" />
+
+      <div class="compat-grid">
+        <div class="card" style="padding:14px;">
+          <h2 style="margin:0 0 8px;">基本性格</h2>
+          <ul id="listPersonality" style="margin:0; padding-left:18px; color:var(--text); line-height:1.7;"></ul>
+        </div>
+
+        <div class="card" style="padding:14px;">
+          <h2 style="margin:0 0 8px;">仕事</h2>
+          <ul id="listWork" style="margin:0; padding-left:18px; color:var(--text); line-height:1.7;"></ul>
+        </div>
+
+        <div class="card" style="padding:14px;">
+          <h2 style="margin:0 0 8px;">恋愛</h2>
+          <ul id="listLove" style="margin:0; padding-left:18px; color:var(--text); line-height:1.7;"></ul>
+        </div>
+
+        <div class="card" style="padding:14px;">
+          <h2 style="margin:0 0 8px;">相性のいいタイプ</h2>
+          <div id="bestWrap" class="small"></div>
+          <div class="actions" style="margin-top:12px;">
+            <a class="btn secondary" id="btnCompat">相性どうぶつ12タイプ診断で確認</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="footer">※結果はURLの <span class="code">type</span> パラメータだけで表示されます（個人情報は扱いません）。</div>
+  </div>
+
+<script src="app.js"></script>
+<script>
+  const q = parseQuery();
+  const typeKey = (q.type && TYPES[q.type]) ? q.type : "moon_cat";
+  const t = TYPES[typeKey];
+
+  document.getElementById("typeImg").src = t.img;
+  document.getElementById("typeLabel").textContent = t.label;
+  document.getElementById("typeCatch").textContent = t.catch;
+
+  function fillList(id, items){
+    const ul = document.getElementById(id);
+    ul.innerHTML = "";
+    items.forEach(s=>{
+      const li = document.createElement("li");
+      li.textContent = s;
+      ul.appendChild(li);
+    });
+  }
+  fillList("listPersonality", t.personality);
+  fillList("listWork", t.work);
+  fillList("listLove", t.love);
+
+  const bestWrap = document.getElementById("bestWrap");
+  bestWrap.innerHTML = t.best.map(k=>`・${TYPES[k].label}`).join("<br/>");
+
+  const url = location.href;
+  document.getElementById("urlLine").textContent = url;
+
+  document.getElementById("btnCopy").addEventListener("click", async ()=>{
+    await copyText(url);
+    document.getElementById("btnCopy").textContent = "コピーしました！";
+    setTimeout(()=>document.getElementById("btnCopy").textContent="結果URLをコピー", 1200);
+  });
+
+  const shareText = `私は【${t.label}】でした！\n${t.catch}\nどうぶつ12タイプ診断はこちら👇`;
+  const xUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(url.replace(/result\.html.*/, "index.html"))}`;
+  document.getElementById("btnX").href = xUrl;
+
+  document.getElementById("btnCompat").href = `compatibility.html?me=${encodeURIComponent(typeKey)}`;
+
+  async function saveCardAsImage(){
+    // Build a 1080x1080 shareable card
+    const size = 1080;
+    const canvas = document.createElement("canvas");
+    canvas.width = size; canvas.height = size;
+    const ctx = canvas.getContext("2d");
+
+    // Background (yume-kawa retro)
+    const g = ctx.createLinearGradient(0,0,size,size);
+    g.addColorStop(0, "rgba(255,159,214,0.95)");
+    g.addColorStop(0.5, "rgba(183,166,255,0.92)");
+    g.addColorStop(1, "rgba(142,231,255,0.90)");
+    ctx.fillStyle = g;
+    ctx.fillRect(0,0,size,size);
+
+    // Soft paper grain
+    ctx.globalAlpha = 0.10;
+    for (let i=0;i<1400;i++){
+      const x = Math.random()*size;
+      const y = Math.random()*size;
+      const r = Math.random()*1.2;
+      ctx.fillStyle = "rgba(255,255,255,1)";
+      ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+    }
+    ctx.globalAlpha = 0.20;
+
+    // Retro dots
+    const step = 18;
+    ctx.fillStyle = "rgba(255,255,255,0.35)";
+    for (let y=10;y<size;y+=step){
+      for (let x=10;x<size;x+=step){
+        ctx.beginPath(); ctx.arc(x,y,1.2,0,Math.PI*2); ctx.fill();
+      }
+    }
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = g;
+    ctx.fillRect(0,0,size,size);
+
+    // Frame
+    const pad = 44;
+    ctx.fillStyle = "rgba(0,0,0,0.35)";
+    ctx.fillRect(pad, pad, size-pad*2, size-pad*2);
+
+    ctx.strokeStyle = "rgba(255,255,255,0.55)";
+    ctx.lineWidth = 8;
+    ctx.strokeRect(pad, pad, size-pad*2, size-pad*2);
+
+    // Title ribbon
+    ctx.fillStyle = "rgba(255,204,0,0.92)";
+    ctx.fillRect(pad, pad, size-pad*2, 120);
+    ctx.fillStyle = "#1a1200";
+    ctx.font = "900 58px 'Noto Sans JP', system-ui, sans-serif";
+    ctx.textBaseline = "middle";
+    ctx.fillText("どうぶつ12タイプ診断", pad+26, pad+60);
+
+    // Character image (square)
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = t.img;
+    await new Promise((ok, ng)=>{ img.onload=ok; img.onerror=ng; });
+
+    const imgSize = 560;
+    const imgX = (size - imgSize)/2;
+    const imgY = pad + 150;
+    // image frame
+    ctx.fillStyle = "rgba(255,255,255,0.08)";
+    ctx.fillRect(imgX-10, imgY-10, imgSize+20, imgSize+20);
+    ctx.drawImage(img, imgX, imgY, imgSize, imgSize);
+
+    // Type label
+    ctx.fillStyle = "rgba(255,255,255,0.92)";
+    ctx.font = "900 56px 'Noto Sans JP', system-ui, sans-serif";
+    const label = t.label;
+    const textY = imgY + imgSize + 110;
+    ctx.textAlign = "center";
+    ctx.fillText(label, size/2, textY);
+
+    // Catch copy (wrap)
+    ctx.fillStyle = "rgba(238,242,255,0.92)";
+    ctx.font = "800 38px 'Noto Sans JP', system-ui, sans-serif";
+    const catchText = t.catch;
+    const maxWidth = size - pad*2 - 80;
+    const words = catchText.split("");
+    let line = "";
+    let lines = [];
+    for (const ch of words){
+      const test = line + ch;
+      if (ctx.measureText(test).width > maxWidth){
+        lines.push(line);
+        line = ch;
+      } else {
+        line = test;
+      }
+    }
+    if (line) lines.push(line);
+    const startY = textY + 74;
+    lines = lines.slice(0,2);
+    lines.forEach((ln,i)=>{
+      ctx.fillText(ln, size/2, startY + i*50);
+    });
+
+
+    // Summary (80-100 chars)
+    const summary = (t.cardSummary || "").trim();
+    if (summary){
+      ctx.save();
+      ctx.globalAlpha = 0.95;
+      ctx.font = '700 36px "M PLUS Rounded 1c","Zen Maru Gothic",sans-serif';
+      ctx.fillStyle = "rgba(35,26,58,0.90)";
+      ctx.textAlign = "left";
+      const maxW2 = size - pad*2;
+      const sumLines = wrapText(summary, maxW2, ctx).slice(0,3);
+      const y0 = size - pad - 120;
+      const lh2 = 44;
+      sumLines.forEach((ln,i)=>ctx.fillText(ln, pad, y0 + i*lh2));
+      ctx.restore();
+    }
+
+    // Brand mark
+    ctx.save();
+    ctx.globalAlpha = 0.92;
+    ctx.font = '900 44px "M PLUS Rounded 1c","Zen Maru Gothic",sans-serif';
+    ctx.textAlign = "right";
+    ctx.fillStyle = "rgba(255,255,255,0.92)";
+    ctx.fillText("どうぶつ12タイプ診断", size - pad, size - pad);
+    ctx.restore();
+
+    // Share Sheet (iOS/Android) -> 「写真に保存」でアルバムへ
+    const blob = await new Promise(resolve=>canvas.toBlob(resolve, "image/png"));
+    const file = new File([blob], `12typeQA_${typeKey}.png`, { type: "image/png" });
+
+    if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+      try{
+        await navigator.share({ title:"どうぶつ12タイプ診断", text:"結果カードを保存してね！", files:[file] });
+        return;
+      }catch(e){
+        // fallback below
+      }
+    }
+
+    // Fallback: download
+    const a = document.createElement("a");
+    a.download = `12typeQA_${typeKey}.png`;
+    a.href = canvas.toDataURL("image/png");
+    a.click();
+}
+
+  document.getElementById("btnSave").addEventListener("click", async ()=>{
+    const btn = document.getElementById("btnSave");
+    const prev = btn.textContent;
+    btn.textContent = "作成中...";
+    btn.disabled = true;
+    try{
+      await saveCardAsImage();
+    } finally {
+      btn.disabled = false;
+      btn.textContent = prev;
+    }
+  });
+
+</script>
+</body>
+</html>
+const previewKey = params.get("type");
+  if (previewKey && TYPES[previewKey]) {
+    typeKey = previewKey;
+  }
+  function wrapText(text, maxWidth, ctx){
+    const words = text.split("");
+    const lines = [];
+    let line = "";
+    for (const ch of words){
+      const test = line + ch;
+      const w = ctx.measureText(test).width;
+      if (w > maxWidth && line){
+        lines.push(line);
+        line = ch;
+      } else {
+        line = test;
+      }
+    }
+    if (line) lines.push(line);
+    return lines;
+  }
+
+

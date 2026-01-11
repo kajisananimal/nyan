@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>どうぶつ12タイプ診断 | 診断</title>
+  <meta name="description" content="質問に答えるだけで、あなたを表す「12タイプ動物キャラ」がわかる診断。性格・仕事・恋愛の傾向に加えて、相性診断や結果カードの保存もできます。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;900&family=Zen+Maru+Gothic:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" href="assets/favicon-32.png">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <meta property="og:title" content="どうぶつ12タイプ診断 | 診断">
+  <meta property="og:description" content="質問に答えるだけで、あなたを表す「12タイプ動物キャラ」がわかる診断。性格・仕事・恋愛の傾向に加えて、相性診断や結果カードの保存もできます。">
+  <meta property="og:image" content="assets/ogp.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="どうぶつ12タイプ診断 | 診断">
+  <meta name="twitter:description" content="質問に答えるだけで、あなたを表す「12タイプ動物キャラ」がわかる診断。性格・仕事・恋愛の傾向に加えて、相性診断や結果カードの保存もできます。">
+  <meta name="twitter:image" content="assets/ogp.png">
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebSite", "name": "どうぶつ12タイプ診断", "description": "質問に答えるだけで、あなたを表す「12タイプ動物キャラ」がわかる診断。性格・仕事・恋愛の傾向に加えて、相性診断や結果カードの保存もできます。", "inLanguage": "ja", "url": "./"}</script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <div class="badge">診</div>
+        <div>
+          <h1>どうぶつ12タイプ診断</h1>
+          <div class="subtitle">12問でタイプ判定 → 結果シェア → 相性チェックまで</div>
+        </div>
+      </div>
+      <nav class="nav">
+        <a href="index.html">どうぶつ12タイプ診断</a>
+        <a href="compatibility.html">相性</a>
+      </nav>
+    </header>
+
+    <div class="main-grid">
+      <section class="card">
+        <div class="hero">
+          <img src="assets/characters_grid.png" alt="4キャラクター" />
+          <div>
+            <h2>あなたの“中身”をキャラ化する</h2>
+            <p>直感で答えてOK。最後にビックリマン風の結果カードが出ます。<br/>そのまま友達に共有して、相性も見れます。</p>
+            <div class="footer">※データは保存しません（ローカル判定）。</div>
+          </div>
+        </div>
+
+        <hr class="sep" />
+
+        <form id="quiz"></form>
+
+        <div class="actions">
+          <button id="btnResult" class="primary" type="button" disabled>結果を見る</button>
+          <button id="btnReset" class="secondary" type="button">リセット</button>
+          <a class="btn ghost" href="compatibility.html">相性どうぶつ12タイプ診断へ</a>
+        </div>
+
+        <div id="hint" class="notice" style="display:none;margin-top:14px;">
+          まだ未回答があります。全問答えると結果ボタンが押せます。
+        </div>
+      </section>
+
+      <aside class="card">
+        <h2 style="margin:0 0 10px;">タイプ一覧（12）</h2>
+        <div class="small">結果ページは個別URLでシェアできます（例：<span class="code">result.html?type=moon_cat</span>）。</div>
+        <hr class="sep" />
+        <div class="kv" id="typeList"></div>
+      </aside>
+    </div>
+  </div>
+
+<script src="app.js"></script>
+<script>
+  const quizEl = document.getElementById("quiz");
+  const btnResult = document.getElementById("btnResult");
+  const btnReset = document.getElementById("btnReset");
+  const hint = document.getElementById("hint");
+
+  function render(){
+    quizEl.innerHTML = "";
+    QUESTIONS.forEach((q, idx)=>{
+      const wrap = document.createElement("div");
+      wrap.className = "q";
+      wrap.innerHTML = `<h3>Q${idx+1}. ${q.text}</h3>`;
+      const opts = document.createElement("div");
+      opts.className = "opts";
+
+      q.options.forEach((o)=>{
+        const label = document.createElement("label");
+        label.className = "opt";
+        label.innerHTML = `
+          <input type="radio" name="${q.id}" value="${o.key}" />
+          <span><b>${o.key}.</b> ${o.text}</span>
+        `;
+        opts.appendChild(label);
+      });
+      wrap.appendChild(opts);
+      quizEl.appendChild(wrap);
+    });
+  }
+
+  function allAnswered(){
+    return QUESTIONS.every(q=> !!quizEl.querySelector(`input[name="${q.id}"]:checked`));
+  }
+
+  function compute(){
+    const score = {I:0,E:0,F:0,T:0, subScores:{}};
+    QUESTIONS.forEach(q=>{
+      const v = quizEl.querySelector(`input[name="${q.id}"]:checked`)?.value;
+      if (!v) return;
+      const opt = q.options.find(o=>o.key===v);
+      if (!opt || !opt.score) return;
+      const s = opt.score;
+      score.I += (s.I||0); score.E += (s.E||0); score.F += (s.F||0); score.T += (s.T||0);
+      if (s.sub){
+        score.subScores[s.sub] = (score.subScores[s.sub]||0) + 1;
+      }
+    });
+    return decideType(score);
+  }
+
+  render();
+
+  quizEl.addEventListener("change", ()=>{
+    btnResult.disabled = !allAnswered();
+    hint.style.display = btnResult.disabled ? "block" : "none";
+  });
+
+  btnResult.addEventListener("click", ()=>{
+    if (!allAnswered()){
+      hint.style.display = "block";
+      return;
+    }
+    const type = compute();
+    location.href = `result.html?type=${encodeURIComponent(type)}`;
+  });
+
+  btnReset.addEventListener("click", ()=>{
+    quizEl.reset?.();
+    quizEl.querySelectorAll('input[type="radio"]').forEach(i=>i.checked=false);
+    btnResult.disabled = true;
+    hint.style.display = "none";
+    window.scrollTo({top:0,behavior:"smooth"});
+  });
+</script>
+<script>
+  const list = document.getElementById("typeList");
+  if (list){
+    const order = ["moon_cat","dream_cat","mist_cat","forest_rabbit","wind_rabbit","wisdom_rabbit","sun_dog","thunder_dog","festival_dog","king_lion","sage_lion","shogun_lion"];
+    list.innerHTML = order.map(k=>{
+      const t = TYPES[k];
+      return `<div>
+        <div class="k">${t.label}</div>
+        <div class="v">${t.catch}</div>
+        <div class="small"><span class="code">result.html?type=${k}</span></div>
+      </div>`;
+    }).join("");
+  }
+</script>
+</body>
+</html>

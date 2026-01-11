@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>どうぶつ12タイプ診断 | 相性診断</title>
+  <meta name="description" content="質問に答えるだけで、あなたを表す「12タイプ動物キャラ」がわかる診断。性格・仕事・恋愛の傾向に加えて、相性診断や結果カードの保存もできます。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;900&family=Zen+Maru+Gothic:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" href="assets/favicon-32.png">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <meta property="og:title" content="どうぶつ12タイプ診断 | 相性診断">
+  <meta property="og:description" content="質問に答えるだけで、あなたを表す「12タイプ動物キャラ」がわかる診断。性格・仕事・恋愛の傾向に加えて、相性診断や結果カードの保存もできます。">
+  <meta property="og:image" content="assets/ogp.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="どうぶつ12タイプ診断 | 相性診断">
+  <meta name="twitter:description" content="質問に答えるだけで、あなたを表す「12タイプ動物キャラ」がわかる診断。性格・仕事・恋愛の傾向に加えて、相性診断や結果カードの保存もできます。">
+  <meta name="twitter:image" content="assets/ogp.png">
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebSite", "name": "どうぶつ12タイプ診断", "description": "質問に答えるだけで、あなたを表す「12タイプ動物キャラ」がわかる診断。性格・仕事・恋愛の傾向に加えて、相性診断や結果カードの保存もできます。", "inLanguage": "ja", "url": "./"}</script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <div class="badge">相</div>
+        <div>
+          <h1>相性どうぶつ12タイプ診断</h1>
+          <div class="subtitle">2人のタイプを選ぶだけ</div>
+        </div>
+      </div>
+      <nav class="nav">
+        <a href="index.html">どうぶつ12タイプ診断</a>
+        <a href="compatibility.html">相性</a>
+      </nav>
+    </header>
+
+    <section class="card">
+      <div class="compat-grid">
+        <div>
+          <h2 style="margin:0 0 10px;">あなた</h2>
+          <select id="me"></select>
+          <div class="result-wrap" style="margin-top:12px;">
+            <img id="meImg" src="" alt="あなたの画像" />
+            <div>
+              <div class="type-pill" id="meLabel"></div>
+              <div class="small" id="meCatch"></div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h2 style="margin:0 0 10px;">相手</h2>
+          <select id="you"></select>
+          <div class="result-wrap" style="margin-top:12px;">
+            <img id="youImg" src="" alt="相手の画像" />
+            <div>
+              <div class="type-pill" id="youLabel"></div>
+              <div class="small" id="youCatch"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="sep" />
+
+      <div class="card" style="padding:14px;">
+        <h2 style="margin:0 0 8px;">どうぶつ12タイプ診断結果</h2>
+        <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+          <div class="type-pill" id="grade"></div>
+          <div class="small" id="msg"></div>
+        </div>
+        <div class="actions" style="margin-top:12px;">
+          <button class="primary" id="btnCopy">相性URLをコピー</button>
+          <a class="btn secondary" id="btnShare" target="_blank" rel="noopener">Xでシェア</a>
+          <a class="btn ghost" href="index.html">どうぶつ12タイプ診断へ戻る</a>
+        </div>
+        <div class="footer" id="urlLine"></div>
+      </div>
+    </section>
+  </div>
+
+<script src="app.js"></script>
+<script>
+  const selMe = document.getElementById("me");
+  const selYou = document.getElementById("you");
+
+  function addOptions(sel){
+    sel.innerHTML = "";
+    Object.entries(TYPES).forEach(([key, t])=>{
+      const o = document.createElement("option");
+      o.value = key;
+      o.textContent = t.label;
+      sel.appendChild(o);
+    });
+  }
+  addOptions(selMe); addOptions(selYou);
+
+  const q = parseQuery();
+  if (q.me && TYPES[q.me]) selMe.value = q.me;
+  if (q.you && TYPES[q.you]) selYou.value = q.you;
+
+  function render(){
+    const me = TYPES[selMe.value];
+    const you = TYPES[selYou.value];
+
+    document.getElementById("meImg").src = me.img;
+    document.getElementById("meLabel").textContent = me.label;
+    document.getElementById("meCatch").textContent = me.catch;
+
+    document.getElementById("youImg").src = you.img;
+    document.getElementById("youLabel").textContent = you.label;
+    document.getElementById("youCatch").textContent = you.catch;
+
+    const r = prettyCompatibility(me.key, you.key);
+    document.getElementById("grade").textContent = `相性 ${r.grade}`;
+    document.getElementById("msg").textContent = r.msg;
+
+    const url = `${baseUrl()}/compatibility.html?me=${encodeURIComponent(me.key)}&you=${encodeURIComponent(you.key)}`;
+    document.getElementById("urlLine").textContent = url;
+
+    document.getElementById("btnCopy").onclick = async ()=>{
+      await copyText(url);
+      document.getElementById("btnCopy").textContent = "コピーしました！";
+      setTimeout(()=>document.getElementById("btnCopy").textContent="相性URLをコピー", 1200);
+    };
+
+    const shareText = `相性どうぶつ12タイプ診断：${me.label} × ${you.label}\n結果：${r.grade}（${r.msg}）\n👇どうぶつ12タイプ診断はこちら`;
+    document.getElementById("btnShare").href =
+      `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(baseUrl()+"/index.html")}`;
+
+    // update url without reload
+    const newUrl = `?me=${encodeURIComponent(me.key)}&you=${encodeURIComponent(you.key)}`;
+    history.replaceState(null, "", newUrl);
+  }
+
+  selMe.addEventListener("change", render);
+  selYou.addEventListener("change", render);
+  render();
+</script>
+</body>
+</html>
