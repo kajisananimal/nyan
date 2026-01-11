@@ -301,3 +301,110 @@ select{
 button{touch-action: manipulation;}
 
 .footer{margin-top:18px; color: var(--muted); font-size:12px;}
+
+
+/* --- Cute CTA buttons (override) --- */
+#btnResult, #btnSave, #btnRestart{
+  position: relative;
+  z-index: 5;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  font-weight: 800;
+  letter-spacing: .02em;
+  border-radius: 999px;
+  padding: 16px 22px;
+  min-height: 52px;
+  width: 100%;
+  max-width: 520px;
+  margin-inline: auto;
+  box-shadow: 0 14px 32px rgba(255, 105, 180, .18), 0 6px 18px rgba(96, 165, 250, .16);
+  transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
+}
+
+#btnResult{
+  border: 2px solid rgba(255,255,255,.8);
+  background: linear-gradient(90deg, #ff9ad6, #a8c7ff);
+  color: #fff;
+}
+
+#btnSave{
+  border: 2px solid rgba(255,255,255,.85);
+  background: linear-gradient(90deg, #a8c7ff, #b8f2d6);
+  color: #17324d;
+}
+
+#btnResult:hover, #btnSave:hover, #btnRestart:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 18px 40px rgba(255, 105, 180, .22), 0 10px 22px rgba(96, 165, 250, .18);
+}
+
+#btnResult:active, #btnSave:active, #btnRestart:active{
+  transform: translateY(0px) scale(.99);
+  filter: brightness(.98);
+}
+
+#btnResult:disabled{
+  opacity: .55;
+  filter: grayscale(.2);
+  cursor: not-allowed;
+  box-shadow: 0 10px 20px rgba(0,0,0,.10);
+}
+
+/* Make the actions area never overlay the buttons */
+.actions{
+  position: relative;
+  z-index: 4;
+  gap: 12px;
+}
+
+/* --- Cute prominent buttons (v5) --- */
+.primary,
+.secondary {
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  border-radius: 999px;
+  box-shadow:
+    0 12px 30px rgba(0, 0, 0, 0.12),
+    0 2px 0 rgba(255, 255, 255, 0.6) inset;
+  transform: translateZ(0);
+  transition: transform 0.18s ease, filter 0.18s ease, box-shadow 0.18s ease;
+}
+
+.primary {
+  border: none;
+  background: linear-gradient(135deg, rgba(255, 122, 198, 0.95), rgba(122, 217, 255, 0.95));
+}
+
+.primary:hover {
+  filter: brightness(1.03);
+  transform: translateY(-2px);
+  box-shadow:
+    0 16px 36px rgba(0, 0, 0, 0.14),
+    0 2px 0 rgba(255, 255, 255, 0.65) inset;
+}
+
+.primary:active {
+  transform: translateY(0);
+  filter: brightness(0.98);
+}
+
+.secondary {
+  border: 2px solid rgba(255, 122, 198, 0.35);
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.secondary:hover {
+  transform: translateY(-2px);
+}
+
+/* Make CTA extra prominent on quiz/result */
+#btnSubmit,
+#btnSave {
+  min-height: 56px;
+  font-size: 18px;
+}
+
+#btnSave {
+  width: min(520px, 100%);
+}
