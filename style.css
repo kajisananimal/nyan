@@ -408,3 +408,15 @@ button{touch-action: manipulation;}
 #btnSave {
   width: min(520px, 100%);
 }
+
+/* === v6: compatibility mobile fit (no cropping) === */
+.compat-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
+.result-wrap{display:flex;gap:12px;align-items:center;max-width:100%;}
+.result-wrap img{width:160px;height:160px;max-width:40vw;max-height:40vw;object-fit:contain;object-position:center;flex:0 0 auto;}
+.result-wrap > div{min-width:0;}
+
+@media (max-width:520px){
+  .compat-grid{grid-template-columns:1fr;}
+  .result-wrap{flex-direction:row;}
+  .result-wrap img{width:min(42vw,160px);height:auto;aspect-ratio:1/1;}
+}
