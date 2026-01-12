@@ -355,10 +355,68 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 </script>
-  <script src="saveImage.js">
-  // Save button
-  const __btn = document.getElementById('btnSaveCompat');
-  if (__btn) __btn.addEventListener('click', () => saveElementAsImage(document.getElementById('compatCard'), 'compat_card'));
+  <script src="saveImage.js"></script>
+<script>
+(function(){
+  function wire(btnId, cardId, filename){
+    const btn=document.getElementById(btnId);
+    if(!btn) return;
+    btn.type = 'button';
+    btn.addEventListener('click', async ()=>{
+      try{
+        btn.disabled=true; btn.classList.add('is-loading');
+        await window.__saveCardToImage(cardId, filename);
+      }catch(e){
+        alert(e && e.message ? e.message : '保存に失敗しました');
+        console.error(e);
+      }finally{
+        btn.disabled=false; btn.classList.remove('is-loading');
+      }
+    });
+  }
+  wire('btnSaveCompat','compatCard','相性カード.png');
+})();
 </script>
+
+<script>
+(function(){
+  function updateCompatUI(){
+    try{
+      if(!window.TYPES) return;
+      const meSel=document.getElementById('meSelect');
+      const youSel=document.getElementById('youSelect');
+      const meKey=meSel ? meSel.value : null;
+      const youKey=youSel ? youSel.value : null;
+      const me=meKey && TYPES[meKey] ? TYPES[meKey] : null;
+      const you=youKey && TYPES[youKey] ? TYPES[youKey] : null;
+
+      const meImg=document.getElementById('meImg');
+      const youImg=document.getElementById('youImg');
+      if(me && meImg) meImg.src = me.img;
+      if(you && youImg) youImg.src = you.img;
+
+      const scoreEl=document.getElementById('compatScore');
+      const textEl=document.getElementById('compatText');
+      if(typeof window.prettyCompatibility === 'function' && meKey && youKey){
+        const r = prettyCompatibility(meKey, youKey);
+        if(scoreEl) scoreEl.textContent = (r.percent ?? r.score ?? '') + '％';
+        if(textEl) textEl.textContent = r.text ?? r.description ?? '';
+      }
+    }catch(e){
+      console.error(e);
+    }
+  }
+  window.addEventListener('DOMContentLoaded', ()=>{
+    const meSel=document.getElementById('meSelect');
+    const youSel=document.getElementById('youSelect');
+    if(meSel) meSel.addEventListener('change', updateCompatUI);
+    if(youSel) youSel.addEventListener('change', updateCompatUI);
+    // ensure a default partner if empty
+    if(youSel && !youSel.value && youSel.options.length>0) youSel.selectedIndex=0;
+    updateCompatUI();
+  });
+})();
+</script>
+
 </body>
 </html>

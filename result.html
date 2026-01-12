@@ -403,10 +403,27 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 </script>
-  <script src="saveImage.js">
-  // Save button
-  const __btn = document.getElementById('btnSave');
-  if (__btn) __btn.addEventListener('click', () => saveElementAsImage(document.getElementById('resultCard'), 'result_card'));
+  <script src="saveImage.js"></script>
+<script>
+(function(){
+  function wire(btnId, cardId, filename){
+    const btn=document.getElementById(btnId);
+    if(!btn) return;
+    btn.type = 'button';
+    btn.addEventListener('click', async ()=>{
+      try{
+        btn.disabled=true; btn.classList.add('is-loading');
+        await window.__saveCardToImage(cardId, filename);
+      }catch(e){
+        alert(e && e.message ? e.message : '保存に失敗しました');
+        console.error(e);
+      }finally{
+        btn.disabled=false; btn.classList.remove('is-loading');
+      }
+    });
+  }
+  wire('btnSave','resultCard','結果カード.png');
+})();
 </script>
 </body>
 </html>

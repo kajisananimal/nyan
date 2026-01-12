@@ -1,111 +1,123 @@
-// Save card as image without external libs (works on mobile)
-// Uses SVG foreignObject render -> Canvas -> Blob, then Web Share API when available.
-async function elementToBlob(el, scale = 2) {
-  const rect = el.getBoundingClientRect();
-  const width = Math.max(1, Math.round(rect.width));
-  const height = Math.max(1, Math.round(rect.height));
+// saveImage.js (v2) - robust card capture & save
+// Uses html2canvas when available; falls back to simple SVG foreignObject capture.
+(async function(){
+  function sleep(ms){ return new Promise(r=>setTimeout(r, ms)); }
 
-  // Clone node and make image src absolute to avoid resolution issues inside SVG
-  const clone = el.cloneNode(true);
-  clone.style.margin = "0";
-  clone.style.transform = "none";
-  clone.style.boxSizing = "border-box";
+  async function nodeToBlobWithHtml2Canvas(node, fileType="image/png"){
+    // Ensure images are loaded
+    const imgs = Array.from(node.querySelectorAll("img"));
+    await Promise.all(imgs.map(img=>{
+      if (img.complete && img.naturalWidth>0) return Promise.resolve();
+      return new Promise(res=>{
+        const done=()=>res();
+        img.addEventListener("load", done, {once:true});
+        img.addEventListener("error", done, {once:true});
+      });
+    }));
+    // A tiny delay helps iOS paint before capture
+    await sleep(60);
 
-  const imgs = clone.querySelectorAll("img");
-  imgs.forEach(img => {
-    const src = img.getAttribute("src");
-    if (src && !src.startsWith("data:")) {
-      try { img.setAttribute("src", new URL(src, window.location.href).href); } catch (_) {}
-      // avoid lazy-load
-      img.setAttribute("loading", "eager");
-      img.setAttribute("decoding", "sync");
-      img.crossOrigin = "anonymous";
-    }
-  });
+    const canvas = await window.html2canvas(node, {
+      backgroundColor: null,
+      useCORS: true,
+      scale: Math.max(2, window.devicePixelRatio || 2),
+      logging: false,
+      scrollX: 0,
+      scrollY: -window.scrollY,
+      windowWidth: document.documentElement.clientWidth,
+      windowHeight: document.documentElement.clientHeight,
+    });
 
-  // Collect CSS rules (best effort)
-  let cssText = "";
-  for (const sheet of Array.from(document.styleSheets)) {
-    try {
-      const rules = sheet.cssRules;
-      if (!rules) continue;
-      for (const r of Array.from(rules)) cssText += r.cssText + "\n";
-    } catch (e) {
-      // cross-origin stylesheet; ignore
-    }
+    return new Promise((resolve)=>canvas.toBlob(resolve, fileType, 0.95));
   }
 
-  const serialized = new XMLSerializer().serializeToString(clone);
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="${width * scale}" height="${height * scale}">
-      <foreignObject width="100%" height="100%" transform="scale(${scale})">
-        <div xmlns="http://www.w3.org/1999/xhtml">
-          <style>
-            ${cssText}
-            /* Ensure consistent render inside foreignObject */
-            * { -webkit-font-smoothing: antialiased; box-sizing: border-box; }
-            body { margin: 0; }
-          </style>
-          ${serialized}
-        </div>
-      </foreignObject>
-    </svg>
-  `.trim();
+  async function nodeToBlobFallback(node, fileType="image/png"){
+    const rect = node.getBoundingClientRect();
+    const width = Math.ceil(rect.width);
+    const height = Math.ceil(rect.height);
 
-  const svgUrl = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+    const clone = node.cloneNode(true);
+    const wrapper = document.createElement("div");
+    wrapper.style.position = "fixed";
+    wrapper.style.left = "-99999px";
+    wrapper.style.top = "0";
+    wrapper.style.width = width + "px";
+    wrapper.style.height = height + "px";
+    wrapper.style.background = "transparent";
+    wrapper.appendChild(clone);
+    document.body.appendChild(wrapper);
 
-  const img = new Image();
-  img.crossOrigin = "anonymous";
+    const style = document.createElement("style");
+    style.textContent = `
+      * { box-sizing: border-box; }
+      img { max-width: 100%; }
+    `;
+    wrapper.appendChild(style);
 
-  await new Promise((resolve, reject) => {
-    img.onload = resolve;
-    img.onerror = reject;
-    img.src = svgUrl;
-  });
+    const svg = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
+        <foreignObject width="100%" height="100%">
+          <div xmlns="http://www.w3.org/1999/xhtml">${wrapper.innerHTML}</div>
+        </foreignObject>
+      </svg>
+    `;
+    const svgBlob = new Blob([svg], {type:"image/svg+xml;charset=utf-8"});
+    const url = URL.createObjectURL(svgBlob);
 
-  const canvas = document.createElement("canvas");
-  canvas.width = width * scale;
-  canvas.height = height * scale;
-  const ctx = canvas.getContext("2d");
+    const img = new Image();
+    img.decoding = "async";
+    img.loading = "eager";
 
-  // white background
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(img, 0, 0);
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
 
-  return await new Promise((resolve) => canvas.toBlob(resolve, "image/png", 1.0));
-}
+    await new Promise((resolve)=>{ img.onload=resolve; img.onerror=resolve; img.src=url; });
+    try { ctx.drawImage(img, 0, 0); } catch(e) {}
 
-async function saveElementAsImage(el, filenameBase = "card") {
-  try {
-    // Ensure fonts/images have a moment to settle
-    await (document.fonts ? document.fonts.ready : Promise.resolve());
-    const blob = await elementToBlob(el, 2);
-    if (!blob) throw new Error("blob_failed");
+    URL.revokeObjectURL(url);
+    document.body.removeChild(wrapper);
 
-    const file = new File([blob], `${filenameBase}.png`, { type: "image/png" });
+    return new Promise((resolve)=>canvas.toBlob(resolve, fileType, 0.95));
+  }
 
-    // Prefer native share (iOS: share sheet -> "写真に保存" が出る)
+  async function nodeToBlob(node, fileType="image/png"){
+    if (window.html2canvas) {
+      const blob = await nodeToBlobWithHtml2Canvas(node, fileType);
+      if (blob) return blob;
+    }
+    return nodeToBlobFallback(node, fileType);
+  }
+
+  async function shareOrDownloadBlob(blob, filename){
+    if (!blob) throw new Error("画像生成に失敗しました");
+    const file = new File([blob], filename, {type: blob.type || "image/png"});
+
+    // iOS Safari: Web Share (files) -> 「画像を保存」で写真へ
     if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
-      await navigator.share({ files: [file], title: "結果カード" });
-      return;
+      await navigator.share({ files: [file], title: filename });
+      return {method:"share"};
     }
 
-    // Fallback: open image in new tab (long-press -> Save Image)
+    // Fallback: direct download
+    const a = document.createElement("a");
     const url = URL.createObjectURL(blob);
-    const w = window.open(url, "_blank");
-    // If blocked, fallback to download
-    if (!w) {
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = file.name;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-    }
-    setTimeout(() => URL.revokeObjectURL(url), 60_000);
-  } catch (e) {
-    console.error(e);
-    alert("保存に失敗しました。Safariの場合は、共有ボタンから保存を試してください。");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 2000);
+    return {method:"download"};
   }
-}
+
+  async function __saveCardToImage(cardId="resultCard", filename="result-card.png"){
+    const node = document.getElementById(cardId);
+    if (!node) throw new Error("カード要素が見つかりません: " + cardId);
+    const blob = await nodeToBlob(node, "image/png");
+    return shareOrDownloadBlob(blob, filename);
+  }
+
+  window.__saveCardToImage = __saveCardToImage;
+})();
