@@ -278,9 +278,7 @@
     }
   }
 
-  document.getElementById('btnSaveCompat').onclick = async ()=>{
-    const btn = document.getElementById('btnSaveCompat');
-    const old = btn.textContent;
+  const old = btn.textContent;
     btn.textContent = '作成中…';
     btn.disabled = true;
     try{ await saveCompatCardAsImage(); }
@@ -356,6 +354,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
+</script>
+  <script src="saveImage.js">
+  // Save button
+  const __btn = document.getElementById('btnSaveCompat');
+  if (__btn) __btn.addEventListener('click', () => saveElementAsImage(document.getElementById('compatCard'), 'compat_card'));
 </script>
 </body>
 </html>

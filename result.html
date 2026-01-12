@@ -403,5 +403,10 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 </script>
+  <script src="saveImage.js">
+  // Save button
+  const __btn = document.getElementById('btnSave');
+  if (__btn) __btn.addEventListener('click', () => saveElementAsImage(document.getElementById('resultCard'), 'result_card'));
+</script>
 </body>
 </html>
