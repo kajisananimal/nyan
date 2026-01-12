@@ -430,3 +430,8 @@ button{touch-action: manipulation;}
   font-size:18px;
   color: #5b4a78;
 }
+
+
+/* save button loading state */
+button.is-loading{opacity:.75;transform:scale(.99);}
+button.is-loading::after{content:'…';margin-left:.35em;}
