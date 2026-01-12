@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="質問に答えるだけで、あなたを表す「12タイプ動物キャラ」がわかる診断。性格・仕事・恋愛の傾向に加えて、相性診断や結果カードの保存もできます。">
+  <link rel="canonical" href="https://kajisananimal.github.io/nyan/types.html">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;900&family=Zen+Maru+Gothic:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+  <title>どうぶつ12タイプ診断 | タイプ一覧</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" href="assets/favicon-32.png">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <meta property="og:title" content="どうぶつ12タイプ診断 | タイプ一覧">
+  <meta property="og:description" content="質問に答えるだけで、あなたを表す「12タイプ動物キャラ」がわかる診断。性格・仕事・恋愛の傾向に加えて、相性診断や結果カードの保存もできます。">
+  <meta property="og:image" content="https://kajisananimal.github.io/nyan/assets/ogp_v3.png">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://kajisananimal.github.io/nyan/types.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="どうぶつ12タイプ診断 | タイプ一覧">
+  <meta name="twitter:description" content="質問に答えるだけで、あなたを表す「12タイプ動物キャラ」がわかる診断。性格・仕事・恋愛の傾向に加えて、相性診断や結果カードの保存もできます。">
+  <meta name="twitter:image" content="https://kajisananimal.github.io/nyan/assets/ogp_v3.png">
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebSite", "name": "どうぶつ12タイプ診断", "description": "質問に答えるだけで、あなたを表す「12タイプ動物キャラ」がわかる診断。性格・仕事・恋愛の傾向に加えて、相性診断や結果カードの保存もできます。", "inLanguage": "ja", "url": "./"}</script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <a class="brand" href="index.html">
+        <div class="brand-badge" aria-hidden="true"></div>
+        <div>
+          <div class="brand-title">どうぶつ12タイプ診断</div>
+          <div class="brand-sub">タイプ一覧</div>
+        </div>
+      </a>
+      <nav class="nav">
+        <a href="quiz.html">診断</a>
+        <a href="compatibility.html">相性診断</a>
+      </nav>
+    </header>
+
+    <div class="card" style="margin-top:16px">
+      <h1>タイプ一覧</h1>
+      <p class="small">気になるタイプをタップして「結果ページ」を見ることもできます（※診断結果とは別の閲覧用）。</p>
+      <hr class="sep" />
+      <div id="grid" class="types-grid"></div>
+    </div>
+
+    <div class="footer">© どうぶつ12タイプ診断</div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    const grid = document.getElementById("grid");
+    const keys = Object.keys(TYPES);
+    grid.innerHTML = keys.map(k=>{
+      const t = TYPES[k];
+      const viewUrl = `result.html?type=${encodeURIComponent(k)}&preview=1`;
+      return `
+        <a class="type-card" href="${viewUrl}">
+          <img src="${t.img}" alt="${t.label}" loading="lazy" />
+          <div class="type-card-title">${t.label}</div>
+          <div class="small">${t.catch}</div>
+        </a>
+      `;
+    }).join("");
+  </script>
+</body>
+</html>
