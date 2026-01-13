@@ -255,7 +255,7 @@
     ctx.font = '700 32px "Zen Maru Gothic", system-ui';
     ctx.fillText(baseUrl() + '/index.html', 100, H-140);
 
-    // Open in new tab for iOS long-press save
+    // Create image blob
     const blob = await new Promise(res=>canvas.toBlob(res, 'image/png'));
     if (!blob){
       const dataUrl = canvas.toDataURL('image/png');
@@ -263,7 +263,21 @@
       if (w) w.document.write(`<img src="${dataUrl}" style="max-width:100%;height:auto" />`);
       return;
     }
+
+    // Try native share (iOS: "写真に追加" etc.)
+    const file = new File([blob], `12typeQA_compat_${me.key}_${you.key}.png`, { type: "image/png" });
+    if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+      try{
+        await navigator.share({ title:"どうぶつ12タイプ診断", text:"相性カードを保存してね！", files:[file] });
+        return;
+      }catch(e){
+        // fallback below
+      }
+    }
+
+    // Fallback: open image (iOS long-press save) / download
     const url = URL.createObjectURL(blob);
+
     const w = window.open(url, '_blank');
     // cleanup later
     setTimeout(()=>URL.revokeObjectURL(url), 60_000);
@@ -277,145 +291,20 @@
       document.body.removeChild(a);
     }
   }
-
-  const old = btn.textContent;
-    btn.textContent = '作成中…';
-    btn.disabled = true;
-    try{ await saveCompatCardAsImage(); }
-    finally{ btn.disabled = false; btn.textContent = old; }
-  };
+  const btn = document.getElementById("btnSaveCompat");
+  if (btn){
+    btn.onclick = async ()=>{
+      const old = btn.textContent;
+      btn.textContent = '作成中…';
+      btn.disabled = true;
+      try{ await saveCompatCardAsImage(); }
+      finally{ btn.disabled = false; btn.textContent = old; }
+    };
+  }
 
   selMe.addEventListener("change", render);
   selYou.addEventListener("change", render);
   render();
-
-// ---- Save card (iOS compatible: Share sheet -> Save Image) ----
-async function __saveCardToImage(targetEl, filenameBase) {
-  if (!targetEl) {
-    alert("保存するカードが見つかりませんでした。");
-    return;
-  }
-  if (typeof html2canvas !== "function") {
-    alert("保存機能の読み込みに失敗しました（html2canvas）。");
-    return;
-  }
-  const canvas = await html2canvas(targetEl, {
-    backgroundColor: null,
-    scale: Math.min(2, window.devicePixelRatio || 2),
-    useCORS: true
-  });
-  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png", 0.95));
-  if (!blob) {
-    alert("画像の生成に失敗しました。");
-    return;
-  }
-  const filename = `${filenameBase}_${Date.now()}.png`;
-
-  // iOS / mobile: share sheet is the most reliable way to save to Photos
-  try {
-    const file = new File([blob], filename, { type: "image/png" });
-    if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
-      await navigator.share({
-        files: [file],
-        title: "どうぶつ12タイプ診断",
-        text: "結果カードを保存してシェアしよう！"
-      });
-      return;
-    }
-  } catch (e) {
-    // fall through
-  }
-
-  // Desktop / fallback: download or open in new tab
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1500);
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  const btn = document.getElementById("btnSaveCompat");
-  if (btn) {
-    btn.addEventListener("click", async () => {
-      btn.disabled = true;
-      btn.classList.add("is-loading");
-      try {
-        const target = document.querySelector("section.card");
-        await __saveCardToImage(target, "compat_card");
-      } finally {
-        btn.disabled = false;
-        btn.classList.remove("is-loading");
-      }
-    });
-  }
-});
-
-</script>
-  <script src="saveImage.js"></script>
-<script>
-(function(){
-  function wire(btnId, cardId, filename){
-    const btn=document.getElementById(btnId);
-    if(!btn) return;
-    btn.type = 'button';
-    btn.addEventListener('click', async ()=>{
-      try{
-        btn.disabled=true; btn.classList.add('is-loading');
-        await window.__saveCardToImage(cardId, filename);
-      }catch(e){
-        alert(e && e.message ? e.message : '保存に失敗しました');
-        console.error(e);
-      }finally{
-        btn.disabled=false; btn.classList.remove('is-loading');
-      }
-    });
-  }
-  wire('btnSaveCompat','compatCard','相性カード.png');
-})();
-</script>
-
-<script>
-(function(){
-  function updateCompatUI(){
-    try{
-      if(!window.TYPES) return;
-      const meSel=document.getElementById('meSelect');
-      const youSel=document.getElementById('youSelect');
-      const meKey=meSel ? meSel.value : null;
-      const youKey=youSel ? youSel.value : null;
-      const me=meKey && TYPES[meKey] ? TYPES[meKey] : null;
-      const you=youKey && TYPES[youKey] ? TYPES[youKey] : null;
-
-      const meImg=document.getElementById('meImg');
-      const youImg=document.getElementById('youImg');
-      if(me && meImg) meImg.src = me.img;
-      if(you && youImg) youImg.src = you.img;
-
-      const scoreEl=document.getElementById('compatScore');
-      const textEl=document.getElementById('compatText');
-      if(typeof window.prettyCompatibility === 'function' && meKey && youKey){
-        const r = prettyCompatibility(meKey, youKey);
-        if(scoreEl) scoreEl.textContent = (r.percent ?? r.score ?? '') + '％';
-        if(textEl) textEl.textContent = r.text ?? r.description ?? '';
-      }
-    }catch(e){
-      console.error(e);
-    }
-  }
-  window.addEventListener('DOMContentLoaded', ()=>{
-    const meSel=document.getElementById('meSelect');
-    const youSel=document.getElementById('youSelect');
-    if(meSel) meSel.addEventListener('change', updateCompatUI);
-    if(youSel) youSel.addEventListener('change', updateCompatUI);
-    // ensure a default partner if empty
-    if(youSel && !youSel.value && youSel.options.length>0) youSel.selectedIndex=0;
-    updateCompatUI();
-  });
-})();
 </script>
 
 </body>
