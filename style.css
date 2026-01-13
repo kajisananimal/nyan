@@ -409,6 +409,15 @@ button{touch-action: manipulation;}
   width: min(520px, 100%);
 }
 
+
+/* Make the compatibility decide button a bit bigger */
+#btnDecide{
+  min-height: 60px;
+  font-size: 18px;
+  padding: 14px 22px;
+  width: min(520px, 100%);
+}
+
 /* === v6: compatibility mobile fit (no cropping) === */
 .compat-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
 .result-wrap{display:flex;gap:12px;align-items:center;flex-wrap:wrap;max-width:100%;}

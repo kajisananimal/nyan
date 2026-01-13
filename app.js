@@ -875,18 +875,13 @@ async function copyText(text){
 }
 
 function prettyCompatibility(a, b){
-  // Pair-specific compatibility (stable per pair, 50-98)
+  // Pair-specific compatibility: percent/stars/message.
+  // The score is stable per pair, and the message pattern varies by combination.
   const mk = (percent, msg)=>{
     const stars = percent>=90 ? "★★★★★" : percent>=78 ? "★★★★☆" : percent>=64 ? "★★★☆☆" : percent>=55 ? "★★☆☆☆" : "★☆☆☆☆";
     return {percent, stars, msg};
   };
 
-  // Same type
-  if (a===b){
-    return mk(92, "同タイプ同士は価値観が近く、安心感が抜群。迷った時も同じ方向を向きやすい相性です。得意と苦手を言葉にして役割を少し分けると依存せずに成長でき、照れずに感謝を伝えるほど長く心地よく続きます。困った時は一緒に休むのも◎。");
-  }
-
-  // helpers
   const keys = Object.keys(TYPES);
   const ia = Math.max(0, keys.indexOf(a));
   const ib = Math.max(0, keys.indexOf(b));
@@ -899,8 +894,6 @@ function prettyCompatibility(a, b){
     return "other";
   };
 
-  const fa = family(a), fb = family(b);
-
   // stable pseudo-random (pair order independent)
   const pair = ia < ib ? `${ia}-${ib}` : `${ib}-${ia}`;
   let h = 0;
@@ -909,74 +902,153 @@ function prettyCompatibility(a, b){
   // base 55..95
   let percent = 55 + (h % 41);
 
-  // synergy rules
-  if (fa===fb) percent += 6;               // 同じ系統は分かり合いやすい
+  const fa = family(a), fb = family(b);
+
+  // synergy rules (small boosts)
+  if (fa===fb) percent += 6;                                  // 同じ系統は分かり合いやすい
   if ((fa==="cat" && fb==="dog") || (fa==="dog" && fb==="cat")) percent += 4;      // 感性×行動
   if ((fa==="rabbit" && fb==="lion") || (fa==="lion" && fb==="rabbit")) percent += 3; // 計画×統率
   if ((fa==="rabbit" && fb==="cat") || (fa==="cat" && fb==="rabbit")) percent += 2;  // 直感×思考
   if ((fa==="dog" && fb==="lion") || (fa==="lion" && fb==="dog")) percent += 1;      // 現場×決断
 
-  // a/b specific tiny bias to make more variety (order independent)
+  // tiny bias for variety (order independent)
   percent += ((ia + ib) % 3) - 1;
+
+  // same type special
+  if (a===b){
+    percent = 92;
+  }
 
   percent = Math.max(50, Math.min(98, percent));
 
   const labelA = (TYPES[a]?.label || a).split("｜")[0].trim();
   const labelB = (TYPES[b]?.label || b).split("｜")[0].trim();
+  const catchA = TYPES[a]?.catch || "";
+  const catchB = TYPES[b]?.catch || "";
 
   const tone = percent>=90 ? "high" : percent>=78 ? "mid" : percent>=64 ? "ok" : percent>=55 ? "low" : "hard";
-
-  const tips = {
-    high: [
-      "良さを褒め合うほど、自然に運が味方します。",
-      "目標を一つ決めて一緒にやると、スピード感が段違いです。",
-      "小さなルール（連絡頻度/役割）を決めると強さが長持ちします。"
-    ],
-    mid: [
-      "得意分野を分けると、衝突が一気に減ります。",
-      "気持ち→要望の順で言うと、伝わり方がきれいになります。",
-      "忙しい時ほど“確認一言”を入れると安定します。"
-    ],
-    ok: [
-      "違いは伸びしろ。最初に期待値をすり合わせると楽になります。",
-      "迷ったら“今必要なこと”に戻すと噛み合います。",
-      "一度に決めず、試して調整するスタイルが向いています。"
-    ],
-    low: [
-      "距離感の設計が大事。無理に合わせず、合う場面を増やすのがコツです。",
-      "結論を急がず、事実→感情の順で話すとすれ違いが減ります。",
-      "相手の“ペース”を尊重できると一気に改善します。"
-    ],
-    hard: [
-      "ぶつかりやすい組み合わせ。目的を共有し、ルールで守ると続きやすいです。",
-      "疲れている時は判断を先延ばしにして、まず回復が最優先。",
-      "第三の基準（期限/担当/条件）を置くと感情的になりにくいです。"
-    ]
-  };
 
   const pairFlavor = (fa, fb)=>{
     const p = fa<fb ? `${fa}-${fb}` : `${fb}-${fa}`;
     const map = {
-      "cat-cat": "感性が近く、空気感で通じやすい",
-      "rabbit-rabbit": "段取りが揃うと最強、納得感で進める",
-      "dog-dog": "ノリと実行力で加速しやすい",
-      "lion-lion": "決断が早いぶん、主導権の譲り合いが鍵",
-      "cat-dog": "感性と行動が噛み合うと一気に前進する",
-      "cat-rabbit": "直感と理屈のバランスで質が上がる",
-      "cat-lion": "世界観と決断力で大きく動けるが、急ぎすぎ注意",
-      "dog-rabbit": "やる気と計画が揃えば成果が出やすい",
-      "dog-lion": "現場感と決断力で形にする力がある",
-      "lion-rabbit": "統率と設計で“勝ち筋”を作れる"
+      "cat-cat": "空気感で通じやすい",
+      "rabbit-rabbit": "段取りが揃うと最強",
+      "dog-dog": "ノリと実行力で加速",
+      "lion-lion": "決断が早く前に進む",
+      "cat-dog": "感性×行動で前進",
+      "cat-rabbit": "直感×理屈で質UP",
+      "cat-lion": "世界観×決断で大きく動く",
+      "dog-rabbit": "やる気×計画で成果",
+      "dog-lion": "現場×決断で形にする",
+      "lion-rabbit": "統率×設計で勝ち筋"
     };
     return map[p] || "違いを活かすほど伸びる";
   };
 
-  const tipList = tips[tone];
-  const tip = tipList[h % tipList.length];
+  // theme/advice/caution templates (selected by pair hash)
+  const themes = [
+    "安心と信頼",
+    "刺激と成長",
+    "ペース配分",
+    "役割分担",
+    "言葉の温度差",
+    "距離感の設計",
+    "一緒に進める目標",
+    "感情と論理のバランス"
+  ];
+
+  const adviceByTone = {
+    high: [
+      "褒め言葉を増やすほど、関係がどんどん強くなります",
+      "小さな目標を一つ決めて一緒に進めると最強です",
+      "連絡頻度や予定の決め方だけ軽く揃えると長持ちします"
+    ],
+    mid: [
+      "得意分野を分けると、衝突が一気に減ります",
+      "気持ち→要望の順で言うと、伝わり方がきれいになります",
+      "忙しい時ほど“確認の一言”を入れると安定します"
+    ],
+    ok: [
+      "違いは伸びしろ。期待値を先にすり合わせると楽になります",
+      "一回で決めず、試して調整するスタイルが向いています",
+      "迷ったら“今必要なこと”に戻すと噛み合います"
+    ],
+    low: [
+      "距離感の設計が大事。無理に合わせず、合う場面を増やすのがコツです",
+      "事実→感情の順で話すと、すれ違いが減ります",
+      "相手のペースを尊重できると一気に改善します"
+    ],
+    hard: [
+      "目的を共有し、ルール（期限/担当/条件）で守ると続きやすいです",
+      "疲れている時は判断を先延ばしにして、まず回復が最優先",
+      "第三の基準を置くと、感情的になりにくいです"
+    ]
+  };
+
+  const cautionByTone = {
+    high: [
+      "強い分、甘えすぎ・依存だけは注意",
+      "勢いで決めすぎず、確認を一回挟むとさらに安定",
+      "“わかってるつもり”の思い込みにだけ気をつけて"
+    ],
+    mid: [
+      "忙しい時に連絡が雑になると誤解が増えがち",
+      "正しさ勝負になると一気に冷えるので、先に気持ちを共有",
+      "我慢が続くと爆発するので、小出しに本音を"
+    ],
+    ok: [
+      "違いを“否定”に変えないことが鍵",
+      "どちらかが頑張りすぎるとバランスが崩れやすい",
+      "期待を察してもらうより、言葉で出すと楽"
+    ],
+    low: [
+      "同じ話を繰り返す時は、一旦休憩が正解",
+      "相手を変えようとすると疲れるので、ルールで守る",
+      "“今は無理”を早めに言うほど関係が壊れにくい"
+    ],
+    hard: [
+      "疲労・睡眠不足の時ほど衝突しやすい",
+      "感情のまま言う前に、結論を一回メモして整える",
+      "勝ち負けにすると終わるので、共同目標に戻す"
+    ]
+  };
+
+  const pick = (arr, salt=0)=> arr[(h + salt) % arr.length];
+  const theme = pick(themes, 7);
   const flavor = pairFlavor(fa, fb);
 
-  const msg = `${labelA}×${labelB}は「${flavor}」組。相性を上げるコツは、${tip}。`;
+  // If same type, give a special longer text
+  if (a===b){
+    const msg = `${labelA}×${labelB}は同タイプ同士。価値観が近く、安心感が抜群です。
+`+
+      `テーマは「${theme}」。お互いの得意と苦手を言葉にして役割を少し分けると、依存せずに成長できます。
+`+
+      `コツ：${pick(adviceByTone.high, 11)}。注意：${pick(cautionByTone.high, 19)}。`;
+    return mk(percent, msg);
+  }
+
+  const summaryTemplates = [
+    (A,B)=>`${A}×${B}は「${flavor}」タイプ。テーマは「${theme}」。`,
+    (A,B)=>`${A}×${B}の組み合わせは、${flavor}が強み。キーワードは「${theme}」。`,
+    (A,B)=>`${A}と${B}は違いが出やすい分、ハマると伸びる組。テーマは「${theme}」。`,
+    (A,B)=>`${A}×${B}は“相互補完”になりやすい組。焦点は「${theme}」。`
+  ];
+
+  const detailTemplates = [
+    ()=> catchA && catchB ? `それぞれ「${catchA}」「${catchB}」の良さが出るほど、関係の色がはっきりします。` : "お互いの良さが出るほど、関係の色がはっきりします。",
+    ()=> catchA ? `${labelA}側の「${catchA}」が前に出る時、${labelB}側は“受け止め方”を意識すると噛み合います。` : "得意な方が前に出る時、相手は“受け止め方”を意識すると噛み合います。",
+    ()=> catchB ? `${labelB}側の「${catchB}」が強く出る時、${labelA}側は“ペース”を合わせすぎないのがコツ。` : "相手の勢いが強い時、ペースを合わせすぎないのがコツ。",
+    ()=>"合わない部分は“直す”より“運用”で解決すると一気に楽になります。"
+  ];
+
+  const msg = [
+    pick(summaryTemplates, 3)(labelA, labelB),
+    pick(detailTemplates, 13)(),
+    `相性を上げるコツ：${pick(adviceByTone[tone], 23)}。`,
+    `注意ポイント：${pick(cautionByTone[tone], 31)}。`
+  ].join("\n");
 
   return mk(percent, msg);
 }
+
 

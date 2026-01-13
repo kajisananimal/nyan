@@ -17,15 +17,30 @@
     // A tiny delay helps iOS paint before capture
     await sleep(60);
 
+    // Capture in a stable, scroll-independent way. iOS/LINE in-app browsers
+    // sometimes return a white canvas if scroll offsets are mis-specified.
     const canvas = await window.html2canvas(node, {
-      backgroundColor: null,
+      backgroundColor: "#ffffff",
       useCORS: true,
+      allowTaint: false,
       scale: Math.max(2, window.devicePixelRatio || 2),
       logging: false,
       scrollX: 0,
-      scrollY: -window.scrollY,
-      windowWidth: document.documentElement.clientWidth,
-      windowHeight: document.documentElement.clientHeight,
+      scrollY: 0,
+      // Ensure the cloned DOM is visible and not affected by animations.
+      onclone: (doc) => {
+        try {
+          const cloned = doc.getElementById(node.id);
+          if (cloned) {
+            cloned.style.transform = "none";
+            cloned.style.filter = "none";
+            cloned.style.webkitFilter = "none";
+          }
+          const style = doc.createElement("style");
+          style.textContent = `*{animation:none!important;transition:none!important}`;
+          doc.head.appendChild(style);
+        } catch(e) {}
+      }
     });
 
     return new Promise((resolve)=>canvas.toBlob(resolve, fileType, 0.95));
@@ -100,7 +115,32 @@
       return {method:"share"};
     }
 
-    // Fallback: direct download
+    const isIOS = /iP(hone|od|ad)/.test(navigator.userAgent);
+
+    // iOS Safari / some in-app browsers may ignore download attribute.
+    // Open the image so the user can long-press -> "写真に追加".
+    if (isIOS) {
+      const url = URL.createObjectURL(blob);
+      const w = window.open("");
+      if (w) {
+        w.document.write('<meta name="viewport" content="width=device-width, initial-scale=1">');
+        w.document.write('<title>画像を保存</title>');
+        w.document.write('<div style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif;padding:12px;line-height:1.4;">');
+        w.document.write('<div style="font-weight:700;margin-bottom:6px;">画像を保存</div>');
+        w.document.write('<div style="font-size:14px;opacity:.8;margin-bottom:10px;">画像を<strong>長押し</strong>して「写真に追加」を選んでね。</div>');
+        w.document.write('</div>');
+        w.document.write(`<img src="${url}" style="width:100%;height:auto;display:block;" />`);
+        w.document.close();
+        // revoke later
+        setTimeout(()=>URL.revokeObjectURL(url), 60_000);
+      } else {
+        window.location.href = url;
+        setTimeout(()=>URL.revokeObjectURL(url), 60_000);
+      }
+      return {method:"open"};
+    }
+
+    // Fallback: direct download (desktop / Android browsers)
     const a = document.createElement("a");
     const url = URL.createObjectURL(blob);
     a.href = url;
