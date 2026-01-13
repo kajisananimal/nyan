@@ -875,26 +875,108 @@ async function copyText(text){
 }
 
 function prettyCompatibility(a, b){
-  // Returns a stable percent + stars + message (100-150 Japanese chars)
+  // Pair-specific compatibility (stable per pair, 50-98)
   const mk = (percent, msg)=>{
-    const stars = percent>=90 ? "★★★★★" : percent>=75 ? "★★★★☆" : percent>=60 ? "★★★☆☆" : "★★☆☆☆";
+    const stars = percent>=90 ? "★★★★★" : percent>=78 ? "★★★★☆" : percent>=64 ? "★★★☆☆" : percent>=55 ? "★★☆☆☆" : "★☆☆☆☆";
     return {percent, stars, msg};
   };
 
+  // Same type
   if (a===b){
     return mk(92, "同タイプ同士は価値観が近く、安心感が抜群。迷った時も同じ方向を向きやすい相性です。得意と苦手を言葉にして役割を少し分けると依存せずに成長でき、照れずに感謝を伝えるほど長く心地よく続きます。困った時は一緒に休むのも◎。");
   }
-  const bestA = TYPES[a]?.best || [];
-  const bestB = TYPES[b]?.best || [];
-  const aLikesB = bestA.includes(b);
-  const bLikesA = bestB.includes(a);
 
-  if (aLikesB && bLikesA){
-    return mk(88, "お互いの強みが自然に噛み合う“相互ベスト”相性。片方のひらめきがもう片方の実行力に変わり、前に進むスピードが上がります。意見が違う時は結論より気持ちを先に共有し、ねぎらいを添えると信頼が一段深まります。");
-  }
-  if (aLikesB || bLikesA){
-    return mk(74, "片方の得意がもう片方の安心につながる伸びる相性。最初はテンポの差を感じても、得意分野を任せ合うと一気に仲が深まります。約束や連絡の頻度を先に決め、できたことを褒め合うと気持ちがすれ違いにくく長続きします。");
-  }
-  return mk(62, "刺激があって学びが多い相性。考え方やこだわりが違う分、相手の視点を取り入れると世界が広がります。衝突しそうな時は“目的は同じ”を確認して一呼吸。担当や期限を決めて進めると、驚くほどスムーズになります。");
+  // helpers
+  const keys = Object.keys(TYPES);
+  const ia = Math.max(0, keys.indexOf(a));
+  const ib = Math.max(0, keys.indexOf(b));
+
+  const family = (k)=>{
+    if(k.includes("cat")) return "cat";
+    if(k.includes("rabbit")) return "rabbit";
+    if(k.includes("dog")) return "dog";
+    if(k.includes("lion")) return "lion";
+    return "other";
+  };
+
+  const fa = family(a), fb = family(b);
+
+  // stable pseudo-random (pair order independent)
+  const pair = ia < ib ? `${ia}-${ib}` : `${ib}-${ia}`;
+  let h = 0;
+  for(let i=0;i<pair.length;i++){ h = (h*31 + pair.charCodeAt(i)) >>> 0; }
+
+  // base 55..95
+  let percent = 55 + (h % 41);
+
+  // synergy rules
+  if (fa===fb) percent += 6;               // 同じ系統は分かり合いやすい
+  if ((fa==="cat" && fb==="dog") || (fa==="dog" && fb==="cat")) percent += 4;      // 感性×行動
+  if ((fa==="rabbit" && fb==="lion") || (fa==="lion" && fb==="rabbit")) percent += 3; // 計画×統率
+  if ((fa==="rabbit" && fb==="cat") || (fa==="cat" && fb==="rabbit")) percent += 2;  // 直感×思考
+  if ((fa==="dog" && fb==="lion") || (fa==="lion" && fb==="dog")) percent += 1;      // 現場×決断
+
+  // a/b specific tiny bias to make more variety (order independent)
+  percent += ((ia + ib) % 3) - 1;
+
+  percent = Math.max(50, Math.min(98, percent));
+
+  const labelA = (TYPES[a]?.label || a).split("｜")[0].trim();
+  const labelB = (TYPES[b]?.label || b).split("｜")[0].trim();
+
+  const tone = percent>=90 ? "high" : percent>=78 ? "mid" : percent>=64 ? "ok" : percent>=55 ? "low" : "hard";
+
+  const tips = {
+    high: [
+      "良さを褒め合うほど、自然に運が味方します。",
+      "目標を一つ決めて一緒にやると、スピード感が段違いです。",
+      "小さなルール（連絡頻度/役割）を決めると強さが長持ちします。"
+    ],
+    mid: [
+      "得意分野を分けると、衝突が一気に減ります。",
+      "気持ち→要望の順で言うと、伝わり方がきれいになります。",
+      "忙しい時ほど“確認一言”を入れると安定します。"
+    ],
+    ok: [
+      "違いは伸びしろ。最初に期待値をすり合わせると楽になります。",
+      "迷ったら“今必要なこと”に戻すと噛み合います。",
+      "一度に決めず、試して調整するスタイルが向いています。"
+    ],
+    low: [
+      "距離感の設計が大事。無理に合わせず、合う場面を増やすのがコツです。",
+      "結論を急がず、事実→感情の順で話すとすれ違いが減ります。",
+      "相手の“ペース”を尊重できると一気に改善します。"
+    ],
+    hard: [
+      "ぶつかりやすい組み合わせ。目的を共有し、ルールで守ると続きやすいです。",
+      "疲れている時は判断を先延ばしにして、まず回復が最優先。",
+      "第三の基準（期限/担当/条件）を置くと感情的になりにくいです。"
+    ]
+  };
+
+  const pairFlavor = (fa, fb)=>{
+    const p = fa<fb ? `${fa}-${fb}` : `${fb}-${fa}`;
+    const map = {
+      "cat-cat": "感性が近く、空気感で通じやすい",
+      "rabbit-rabbit": "段取りが揃うと最強、納得感で進める",
+      "dog-dog": "ノリと実行力で加速しやすい",
+      "lion-lion": "決断が早いぶん、主導権の譲り合いが鍵",
+      "cat-dog": "感性と行動が噛み合うと一気に前進する",
+      "cat-rabbit": "直感と理屈のバランスで質が上がる",
+      "cat-lion": "世界観と決断力で大きく動けるが、急ぎすぎ注意",
+      "dog-rabbit": "やる気と計画が揃えば成果が出やすい",
+      "dog-lion": "現場感と決断力で形にする力がある",
+      "lion-rabbit": "統率と設計で“勝ち筋”を作れる"
+    };
+    return map[p] || "違いを活かすほど伸びる";
+  };
+
+  const tipList = tips[tone];
+  const tip = tipList[h % tipList.length];
+  const flavor = pairFlavor(fa, fb);
+
+  const msg = `${labelA}×${labelB}は「${flavor}」組。相性を上げるコツは、${tip}。`;
+
+  return mk(percent, msg);
 }
 

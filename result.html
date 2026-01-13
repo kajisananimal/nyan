@@ -1,11 +1,12 @@
 <!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8" />
+    <meta name="robots" content="noimageindex">
+<meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>どうぶつ12タイプ診断</title>
   <meta name="description" content="質問に答えるだけで、あなたを表す「12タイプ動物キャラ」がわかる診断。性格・仕事・恋愛の傾向に加えて、相性診断や結果カードの保存もできます。">
-  <link rel="canonical" href="https://kajisananimal.github.io/nyan/result.html">
+  <link rel="canonical" href="https://kajisananimal.github.io/12an/result.html">
   <meta name="robots" content="noarchive" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -29,13 +30,14 @@
     <meta property="og:type" content="website">
     <meta property="og:title" content="どうぶつ12タイプ診断">
     <meta property="og:description" content="質問に答えるだけで、あなたを表す『12タイプ動物キャラ』がわかる診断。結果はシェア＆相性診断もできるよ。">
-    <meta property="og:image" content="https://kajisananimal.github.io/nyan/assets/ogp_line.png">
+      <meta property="og:url" content="https://kajisananimal.github.io/12an/result.html">
+<meta property="og:image" content="https://kajisananimal.github.io/12an/assets/ogp_home.png?v=20">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="どうぶつ12タイプ診断">
     <meta name="twitter:description" content="質問に答えるだけで、あなたを表す『12タイプ動物キャラ』がわかる診断。結果はシェア＆相性診断もできるよ。">
-    <meta name="twitter:image" content="https://kajisananimal.github.io/nyan/assets/ogp_line.png">
+    <meta name="twitter:image" content="https://kajisananimal.github.io/12an/assets/ogp_x.png?v=20">
     
 </head>
 <body>
@@ -104,6 +106,7 @@
   </div>
 
 <script src="app.js"></script>
+<script src="saveImage.js"></script>
 <script>
   const q = parseQuery();
   const typeKey = (q.type && TYPES[q.type]) ? q.type : "moon_cat";
@@ -330,6 +333,25 @@
 
   document.getElementById("btnSave").addEventListener("click", async ()=>{
     const btn = document.getElementById("btnSave");
+    const card = document.getElementById("resultCard");
+    if(!card) return;
+
+    btn.disabled = true;
+    const old = btn.textContent;
+    btn.textContent = "保存準備中…";
+
+    try{
+      await window.__saveCardToImage(card, "12type_result.png");
+      btn.textContent = "保存しました！";
+      setTimeout(()=>{ btn.textContent = old; btn.disabled = false; }, 1400);
+    }catch(e){
+      console.error(e);
+      alert("保存に失敗しました。もう一度お試しください。");
+      btn.textContent = old;
+      btn.disabled = false;
+    }
+  });
+
     const prev = btn.textContent;
     btn.textContent = "作成中...";
     btn.disabled = true;
