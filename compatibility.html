@@ -83,6 +83,11 @@
         </div>
       </div>
 
+
+      <div class="actions" style="justify-content:center;margin-top:14px;">
+        <button class="primary" id="btnDecide">この組み合わせで決定</button>
+      </div>
+
       <hr class="sep" />
 
       <div class="card" id="compatCard" style="padding:14px;">
@@ -107,6 +112,7 @@
 <script>
   const selMe = document.getElementById("me");
   const selYou = document.getElementById("you");
+  const btnDecide = document.getElementById("btnDecide");
 
   function addOptions(sel){
     sel.innerHTML = "";
@@ -117,198 +123,111 @@
       sel.appendChild(o);
     });
   }
-  addOptions(selMe); addOptions(selYou);
+  addOptions(selMe);
+  addOptions(selYou);
 
   const q = parseQuery();
   if (q.me && TYPES[q.me]) selMe.value = q.me;
   if (q.you && TYPES[q.you]) selYou.value = q.you;
 
-  function render(){
-    const me = TYPES[selMe.value];
-    const you = TYPES[selYou.value];
+  const $ = (id)=>document.getElementById(id);
 
-    document.getElementById("meImg").src = me.img;
-    document.getElementById("meLabel").textContent = me.label;
-    document.getElementById("meCatch").textContent = me.catch;
-
-    document.getElementById("youImg").src = you.img;
-    document.getElementById("youLabel").textContent = you.label;
-    document.getElementById("youCatch").textContent = you.catch;
-
-    const r = prettyCompatibility(me.key, you.key);
-    document.getElementById("grade").textContent = `💖 相性：${r.percent}%`;
-    document.getElementById("stars").textContent = r.stars;
-    document.getElementById("msg").textContent = r.msg;
-
-    const url = `${baseUrl()}/compatibility.html?me=${encodeURIComponent(me.key)}&you=${encodeURIComponent(you.key)}`;
-    document.getElementById("urlLine").textContent = url;
-
-    document.getElementById("btnCopy").onclick = async ()=>{
-      await copyText(url);
-      document.getElementById("btnCopy").textContent = "コピーしました！";
-      setTimeout(()=>document.getElementById("btnCopy").textContent="相性URLをコピー", 1200);
-    };
-
-    const shareText = `相性どうぶつ12タイプ診断：${me.label} × ${you.label}\n結果：${r.grade}（${r.msg}）\n👇どうぶつ12タイプ診断はこちら`;
-    document.getElementById("btnShare").href =
-      `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(baseUrl()+"/index.html")}`;
-
-    // update url without reload
-    const newUrl = `?me=${encodeURIComponent(me.key)}&you=${encodeURIComponent(you.key)}`;
-    history.replaceState(null, "", newUrl);
-  }
-
-
-
-  function wrapText(ctx, text, x, y, maxWidth, lineHeight){
-    const chars = text.split("");
-    let line = "";
-    for (let i=0;i<chars.length;i++){
-      const test = line + chars[i];
-      if (ctx.measureText(test).width > maxWidth && line !== ""){
-        ctx.fillText(line, x, y);
-        line = chars[i];
-        y += lineHeight;
-      } else {
-        line = test;
-      }
-    }
-    if (line) ctx.fillText(line, x, y);
-    return y;
-  }
-
-  async function saveCompatCardAsImage(){
+  // Selection preview (always updates)
+  function renderSelections(){
     const meKey = selMe.value;
     const youKey = selYou.value;
     const me = TYPES[meKey];
     const you = TYPES[youKey];
-    const r = prettyCompatibility(me.key, you.key);
 
-    const W = 1080, H = 1350;
-    const canvas = document.createElement('canvas');
-    canvas.width = W; canvas.height = H;
-    const ctx = canvas.getContext('2d');
+    $("meImg").src = me.img;
+    $("meLabel").textContent = me.label;
+    $("meCatch").textContent = me.catch;
 
-    // background
-    const g = ctx.createLinearGradient(0,0,W,H);
-    g.addColorStop(0,'#fff0f8');
-    g.addColorStop(1,'#eef6ff');
-    ctx.fillStyle = g;
-    ctx.fillRect(0,0,W,H);
+    $("youImg").src = you.img;
+    $("youLabel").textContent = you.label;
+    $("youCatch").textContent = you.catch;
 
-    // card
-    ctx.fillStyle = 'rgba(255,255,255,0.92)';
-    roundRect(ctx, 60, 60, W-120, H-120, 44);
-    ctx.fill();
+    // When selection changes, ask user to decide again
+    $("grade").textContent = "💖 相性：—";
+    $("stars").textContent = "—";
+    $("msg").textContent = "タイプを選んだら「決定」を押してね";
+    $("urlLine").textContent = "";
 
-    // title
-    ctx.fillStyle = '#3a2b57';
-    ctx.font = '700 54px "M PLUS Rounded 1c", system-ui';
-    ctx.fillText('どうぶつ12タイプ診断', 100, 150);
-
-    ctx.font = '900 70px "M PLUS Rounded 1c", system-ui';
-    ctx.fillStyle = '#ff4fa0';
-    ctx.fillText(`相性：${r.percent}%`, 100, 240);
-
-    ctx.font = '700 50px "M PLUS Rounded 1c", system-ui';
-    ctx.fillStyle = '#5b4a78';
-    ctx.fillText(r.stars, 100, 305);
-
-    // icons
-    const iconSize = 300;
-    const yIcon = 360;
-    const x1 = 170, x2 = W - 170 - iconSize;
-
-    const loadImg = (src)=> new Promise((res, rej)=>{ const im = new Image(); im.crossOrigin='anonymous'; im.onload=()=>res(im); im.onerror=rej; im.src=src; });
-    const [im1, im2] = await Promise.all([loadImg(me.img), loadImg(you.img)]);
-
-    // frame + clip
-    ctx.fillStyle='rgba(255,255,255,0.95)';
-    roundRect(ctx, x1-16, yIcon-16, iconSize+32, iconSize+32, 64);
-    ctx.fill();
-    ctx.save();
-    roundRect(ctx, x1, yIcon, iconSize, iconSize, 56);
-    ctx.clip();
-    ctx.drawImage(im1, x1, yIcon, iconSize, iconSize);
-    ctx.restore();
-
-    ctx.fillStyle='rgba(255,255,255,0.95)';
-    roundRect(ctx, x2-16, yIcon-16, iconSize+32, iconSize+32, 64);
-    ctx.fill();
-    ctx.save();
-    roundRect(ctx, x2, yIcon, iconSize, iconSize, 56);
-    ctx.clip();
-    ctx.drawImage(im2, x2, yIcon, iconSize, iconSize);
-    ctx.restore();
-
-    // labels
-    ctx.fillStyle = '#3a2b57';
-    ctx.font = '800 44px "M PLUS Rounded 1c", system-ui';
-    ctx.fillText(me.label, x1, yIcon + iconSize + 70);
-    ctx.fillText(you.label, x2, yIcon + iconSize + 70);
-
-    // message
-    ctx.fillStyle = '#2b2240';
-    ctx.font = '700 40px "Zen Maru Gothic", system-ui';
-    const textX = 100;
-    let y = 880;
-    y = wrapText(ctx, r.msg, textX, y, W-200, 58);
-
-    // footer
-    ctx.fillStyle = '#6f5a94';
-    ctx.font = '700 32px "Zen Maru Gothic", system-ui';
-    ctx.fillText(baseUrl() + '/index.html', 100, H-140);
-
-    // Create image blob
-    const blob = await new Promise(res=>canvas.toBlob(res, 'image/png'));
-    if (!blob){
-      const dataUrl = canvas.toDataURL('image/png');
-      const w = window.open();
-      if (w) w.document.write(`<img src="${dataUrl}" style="max-width:100%;height:auto" />`);
-      return;
-    }
-
-    // Try native share (iOS: "写真に追加" etc.)
-    const file = new File([blob], `12typeQA_compat_${me.key}_${you.key}.png`, { type: "image/png" });
-    if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
-      try{
-        await navigator.share({ title:"どうぶつ12タイプ診断", text:"相性カードを保存してね！", files:[file] });
-        return;
-      }catch(e){
-        // fallback below
-      }
-    }
-
-    // Fallback: open image (iOS long-press save) / download
-    const url = URL.createObjectURL(blob);
-
-    const w = window.open(url, '_blank');
-    // cleanup later
-    setTimeout(()=>URL.revokeObjectURL(url), 60_000);
-    if (!w){
-      // fallback download
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'compatibility.png';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    }
+    // keep URL updated for reload, but don't show result until decide
+    const newUrl = `?me=${encodeURIComponent(meKey)}&you=${encodeURIComponent(youKey)}`;
+    history.replaceState(null, "", newUrl);
   }
-  const btn = document.getElementById("btnSaveCompat");
-  if (btn){
-    btn.onclick = async ()=>{
-      const old = btn.textContent;
-      btn.textContent = '作成中…';
-      btn.disabled = true;
-      try{ await saveCompatCardAsImage(); }
-      finally{ btn.disabled = false; btn.textContent = old; }
+
+  // Result render (only when decided)
+  function renderResult(){
+    const meKey = selMe.value;
+    const youKey = selYou.value;
+    const me = TYPES[meKey];
+    const you = TYPES[youKey];
+
+    const r = prettyCompatibility(meKey, youKey);
+    $("grade").textContent = `💖 相性：${r.percent}%`;
+    $("stars").textContent = r.stars;
+    $("msg").textContent = r.msg;
+
+    const url = `${baseUrl()}/compatibility.html?me=${encodeURIComponent(meKey)}&you=${encodeURIComponent(youKey)}`;
+    $("urlLine").textContent = url;
+
+    $("btnCopy").onclick = async ()=>{
+      await copyText(url);
+      $("btnCopy").textContent = "コピーしました！";
+      setTimeout(()=>$("btnCopy").textContent="相性URLをコピー", 1200);
     };
+
+    const shareText = `相性どうぶつ12タイプ診断：${me.label} × ${you.label}
+相性：${r.percent}% ${r.stars}
+${r.msg}
+👇どうぶつ12タイプ診断はこちら`;
+    $("btnShare").href =
+      `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(baseUrl()+"/index.html")}`;
   }
 
-  selMe.addEventListener("change", render);
-  selYou.addEventListener("change", render);
-  render();
+  // Decide button
+  if (btnDecide){
+    btnDecide.addEventListener("click", ()=>{
+      renderResult();
+      btnDecide.textContent = "この組み合わせで決定 ✓";
+      setTimeout(()=>btnDecide.textContent="この組み合わせで決定", 1200);
+    });
+  }
+
+  // Save compatibility card to album
+  const btnSave = $("btnSaveCompat");
+  if (btnSave){
+    btnSave.addEventListener("click", async ()=>{
+      const old = btnSave.textContent;
+      btnSave.textContent = "保存準備中…";
+      btnSave.disabled = true;
+      try{
+        const meKey = selMe.value;
+        const youKey = selYou.value;
+        await window.__saveCardToImage("compatCard", `12type_compat_${meKey}_${youKey}.png`);
+        btnSave.textContent = "保存できました！";
+        setTimeout(()=>{ btnSave.textContent = old; btnSave.disabled = false; }, 1400);
+      }catch(e){
+        console.error(e);
+        alert("保存に失敗しました。もう一度お試しください。");
+        btnSave.textContent = old;
+        btnSave.disabled = false;
+      }
+    });
+  }
+
+  // events
+  selMe.addEventListener("change", renderSelections);
+  selYou.addEventListener("change", renderSelections);
+
+  renderSelections();
+
+  // If URL already has both params, auto-render result once (so shared links show result)
+  if (q.me && q.you && TYPES[q.me] && TYPES[q.you]) {
+    renderResult();
+  }
 </script>
 
 </body>
